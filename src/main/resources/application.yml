@@ -1,0 +1,39 @@
+--- 
+
+    
+spring: 
+  application:
+    name: CONFIGURATION-SERVICE
+  security: 
+    user: 
+      name: think
+      password: microservices
+  profiles: 
+    active: native
+  cloud: 
+    config: 
+      server: 
+        native: 
+          searchLocations: "classpath:/config"
+  
+management:
+ 
+  endpoints:
+    enabled-by-default: true
+    metrics:
+      sensitive: false
+     
+    web:
+      exposure:
+        include: info,health,prometheus
+ 
+ 
+endpoints:
+  prometheus:
+    sensitive: false
+  
+server:
+  port: 8888
+
+
+management.metrics.tags.application: ${spring.application.name} 

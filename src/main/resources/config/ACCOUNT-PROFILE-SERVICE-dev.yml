@@ -1,0 +1,4 @@
+## YAML Template.
+---
+jwt.secret: 7h1nkm1cr053rv1c35
+configuration.source: CONFIGURATION-SERVICE

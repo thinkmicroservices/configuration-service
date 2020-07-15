@@ -1,0 +1,125 @@
+## docker-compose -f ./dc-01-config.yml up -d
+## starts up:
+##  - elasticsearch
+##  - fluentd
+##  - kibana
+##  - ConfigurationService
+version: "3.1"
+
+services:
+ 
+  ################
+  # Elastisearch # https://geowarin.com/spring-boot-logs-in-elastic-search-with-fluentd/
+  ################
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.2.0
+    # container_name: elasticsearch
+    environment:
+      - "discovery.type=single-node"
+    expose:
+      - "9200"
+    ports:
+      - "9200:9200"
+    networks:
+      - spring_ri_network
+  ##########
+  # Kibana # http://localhost:5601/app/kibana#/home
+  ##########
+
+  kibana:
+    image: kibana:7.2.0
+    links:
+      - "elasticsearch"
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+    networks:
+      - spring_ri_network
+
+ ###########
+ # fluentd #
+ ###########
+
+  fluentd:
+    #build: ./fluentd
+    image: thinkmicroservices/fluentd:latest
+    #volumes:
+    #  - ./fluentd/conf:/fluentd/etc
+    links:
+      - "elasticsearch"
+    ports:
+      - "24224:24224"
+      - "24224:24224/udp"
+    networks:
+      - spring_ri_network
+    depends_on:
+      - elasticsearch
+
+  ##############
+  # prometheus #
+  ##############
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./rules.yml:/etc/prometheus/rules.yml
+    ports:
+      - 9090:9090
+    restart: always
+    networks:
+      - spring_ri_network
+
+  ###########
+  # grafana #
+  ###########
+  grafana:
+    image: grafana/grafana
+    ports:
+      - 3000:3000
+    volumes:
+      - ./datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml
+    depends_on:
+      - prometheus
+    
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    networks:
+      - spring_ri_network
+   
+  #########################
+  # configuration service #
+  #########################
+
+  config-service:
+    image: thinkmicroservices/configuration-service:latest
+
+    environment:
+      - spring.main.banner-mode="off"
+    networks: 
+      - spring_ri_network
+    ports:
+      - 8888:8888
+    depends_on:
+      - elasticsearch
+      - fluentd
+      - kibana
+    links:
+      - fluentd
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: localhost:24224
+        tag:  configuration.svc
+ 
+
+networks:
+   spring_ri_network:
+ 
+     
+ 
+
+    
+
